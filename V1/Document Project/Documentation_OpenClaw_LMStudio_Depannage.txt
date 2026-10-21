@@ -1,0 +1,388 @@
+==================================================================
+DOCUMENTATION TECHNIQUE
+Dépannage et optimisation OpenClaw <-> LM Studio
+==================================================================
+
+Date de l'intervention : 7 août 2026
+Machine concernée      : Poste "Tech" (Windows, laptop Intel i7 vPro,
+                          GPU intégré Iris Xe, pas de GPU dédié)
+Logiciels concernés     : OpenClaw 2026.7.1-2, LM Studio 0.4.20
+Durée de la session     : ~2h30 (04:00 à 06:30 environ)
+
+------------------------------------------------------------------
+SYNTHÈSE GÉNÉRALE
+------------------------------------------------------------------
+
+Point de départ :
+  OpenClaw ne parvenait plus à communiquer avec LM Studio (serveur
+  d'IA locale tournant sur la machine). Le symptôme initial était
+  vague ("ça ne se connecte plus"), mais l'investigation a révélé
+  PLUSIEURS problèmes empilés, indépendants les uns des autres :
+
+  1. Une clé d'authentification API incorrecte
+  2. Une configuration de performance sous-optimale (CPU au lieu
+     du GPU intégré)
+  3. Une instabilité provoquant des crashes en pleine génération
+     (Channel Error) à cause d'une cascade de rechargement de
+     modèles
+
+Résultat final :
+  - Connexion stabilisée, plus aucun crash constaté sur les
+    derniers tests
+  - Vitesse de génération quasi doublée (4.2 -> 7.1 tokens/seconde)
+  - Architecture enrichie : 6 agents locaux configurés, chacun
+    optimisé pour un type de tâche différent
+  - Le dernier réglage (juste avant la fin de session) : l'agent
+    "local" utilise désormais le modèle le plus rapide disponible
+    (llama-3.2-3b-instruct) pour prioriser la vitesse de réponse
+
+------------------------------------------------------------------
+PARTIE 1 : DIAGNOSTIC DE LA PANNE DE CONNEXION
+------------------------------------------------------------------
+
+[PÉDAGOGIE] Comment fonctionne la connexion OpenClaw <-> LM Studio ?
+  OpenClaw est un "orchestrateur" qui peut piloter plusieurs
+  cerveaux IA différents (Claude, GPT, Gemini, Mistral, et des
+  modèles qui tournent EN LOCAL sur votre machine via LM Studio).
+  Pour parler à un modèle local, OpenClaw envoie des requêtes web
+  (HTTP) vers LM Studio, qui joue le rôle de "serveur" sur l'adresse
+  http://localhost:1234 (localhost = "cette machine elle-même").
+
+Étape 1.1 - Vérification du serveur LM Studio
+  Test effectué : commande "curl http://127.0.0.1:1234/v1/models"
+  Résultat : succès, LM Studio répondait avec la liste de ses 18
+  modèles installés.
+  [ANNOTATION] Ce test a permis d'ÉCARTER l'hypothèse "le serveur
+  ne tourne pas" ou "le modèle n'est pas chargé" dès le début.
+  Cela a évité de perdre du temps sur une fausse piste.
+
+Étape 1.2 - Lecture des journaux (logs)
+  Deux sources de logs ont été consultées :
+    a) Les logs d'OpenClaw lui-même (fichier .log dans
+       AppData\Local\Temp\openclaw\)
+    b) Les logs internes de LM Studio (visibles dans l'onglet
+       "Developer" -> "Developer Logs")
+  [ANNOTATION] Les logs OpenClaw contenaient au début beaucoup de
+  "bruit" (des erreurs "missing scope: operator.admin" répétées,
+  liées à un tout autre sujet : une connexion WebSocket d'un
+  dashboard sans les bons droits admin). Cela n'avait AUCUN rapport
+  avec le problème LM Studio - c'est un exemple classique de "faux
+  positif" qu'il faut savoir écarter en dépannage.
+
+Étape 1.3 - Découverte du vrai problème n°1 : la clé API
+  Cause identifiée : LM Studio avait l'option "Require API Key"
+  activée dans ses paramètres serveur, avec une clé personnalisée.
+  Or la configuration OpenClaw (fichier openclaw.json) utilisait
+  encore la valeur par défaut "lm-studio" comme clé.
+  [PÉDAGOGIE] Une clé API, c'est comme un mot de passe que le
+  logiciel client (ici OpenClaw) doit présenter au serveur (LM
+  Studio) pour prouver qu'il a le droit de lui parler. Si la clé
+  ne correspond pas, le serveur répond "401 Unauthorized" - c'est
+  le code d'erreur qu'on a effectivement rencontré à un moment.
+  Résolution : après une tentative avec une clé personnalisée qui
+  s'est avérée révoquée entre-temps, on est revenus à la valeur
+  correcte : "lm-studio" (la clé réellement configurée côté LM
+  Studio à ce moment-là).
+  Fichier modifié : ~\.openclaw\openclaw.json
+  Champ modifié   : models.providers.lmstudio.apiKey
+
+------------------------------------------------------------------
+PARTIE 2 : OPTIMISATION DE LA VITESSE
+------------------------------------------------------------------
+
+[PÉDAGOGIE] Pourquoi un modèle IA local est-il lent sur certains
+ordinateurs ?
+  Un modèle d'IA effectue des milliards de calculs mathématiques
+  pour générer chaque mot de sa réponse. Ces calculs vont beaucoup
+  plus vite sur une carte graphique (GPU) dédiée, conçue pour le
+  calcul massivement parallèle, que sur un processeur (CPU)
+  classique. Le poste "Tech" ne dispose PAS d'une carte graphique
+  dédiée (type NVIDIA ou AMD) : il utilise seulement le circuit
+  graphique intégré au processeur (Intel Iris Xe), beaucoup moins
+  puissant pour ce type de tâche.
+
+Diagnostic constaté :
+  Vitesse de génération initiale : environ 4.2 tokens par seconde
+  [ANNOTATION] Un "token" est une unité de texte utilisée par les
+  modèles d'IA - grossièrement, environ 0,7 à 0,75 mot par token.
+  4.2 tokens/seconde correspond donc à environ 3 mots par seconde,
+  soit ~180 mots par minute générés - relativement lent comparé à
+  un service cloud (souvent 100 à 500+ tokens/seconde).
+
+Cause identifiée :
+  En consultant la configuration de chargement du modèle dans LM
+  Studio, trois réglages limitaient fortement les performances :
+    - offloadRatio à 0.125 (seulement 12,5% du modèle utilisait le
+      circuit graphique, le reste tournait sur le processeur)
+    - offloadKVCacheToGpu à false (la "mémoire de travail" du
+      modèle pendant la génération restait aussi sur le processeur)
+    - cpuThreadPoolSize à seulement 3 threads (alors que le
+      processeur peut probablement en gérer davantage)
+
+Actions correctives appliquées :
+  1. Augmentation du "GPU Offload" à 32 (couverture complète du
+     modèle par le circuit graphique intégré)
+  2. Activation du réglage "Offload KV Cache to GPU Memory"
+  3. Augmentation du nombre de threads CPU de 3 à 6
+
+Résultat mesuré après optimisation :
+  - Traitement du prompt (lecture de la demande) : de ~44-50
+    tokens/seconde à 61-80 tokens/seconde
+  - Génération de la réponse : de 4.2 à environ 7.1-7.35
+    tokens/seconde (amélioration d'environ +70%)
+
+[PÉDAGOGIE] Cette amélioration reste plafonnée par le matériel :
+  un circuit graphique intégré, même bien exploité, n'égalera
+  jamais un vrai GPU dédié. Le gain obtenu est le maximum
+  raisonnable pour cette configuration matérielle précise.
+
+------------------------------------------------------------------
+PARTIE 3 : STABILISATION (RÉSOLUTION DES CRASHES "CHANNEL ERROR")
+------------------------------------------------------------------
+
+Symptôme observé :
+  En cours de génération d'une réponse, une erreur "Prediction
+  failed: Error: Channel Error" apparaissait dans les logs de LM
+  Studio, coupant la réponse en plein milieu.
+  [ANNOTATION IMPORTANTE] Ce crash déclenchait un effet domino :
+  dès qu'un modèle échouait, OpenClaw essayait automatiquement le
+  modèle suivant de sa liste de secours ("fallbacks"), qui à son
+  tour pouvait échouer, entraînant un chargement/déchargement en
+  cascade de plusieurs modèles différents en quelques secondes -
+  ce qui créait une forte pression sur la mémoire de la machine et
+  aggravait le problème initial.
+
+Causes identifiées dans la configuration OpenClaw :
+  1. Le paramètre "preload": true forçait OpenClaw à précharger un
+     modèle au démarrage, ce qui entrait en conflit avec le
+     système de chargement "à la demande" (JIT - Just In Time) de
+     LM Studio, lequel gère normalement automatiquement quel
+     modèle est en mémoire.
+  2. La liste de "fallbacks" (modèles de secours) de l'agent local
+     comportait SIX modèles différents en cascade. En cas
+     d'échec du premier, OpenClaw tentait successivement les cinq
+     autres, chacun nécessitant un chargement complet en mémoire
+     (plusieurs gigaoctets à chaque fois) - une opération lourde
+     répétée inutilement.
+
+[PÉDAGOGIE] Qu'est-ce que le "JIT loading" (chargement à la
+demande) ?
+  Plutôt que de garder TOUS les modèles installés en permanence
+  en mémoire (ce qui saturerait rapidement la RAM disponible), LM
+  Studio charge un modèle uniquement au moment où une requête
+  arrive pour lui, et le décharge automatiquement après une
+  période d'inactivité (voir Partie 4 ci-dessous). C'est un système
+  économe en ressources, mais qui suppose qu'on ne le contredise
+  pas avec un préchargement forcé côté client.
+
+Actions correctives appliquées dans openclaw.json :
+  1. "preload": true -> "preload": false
+  2. Liste de fallbacks réduite de 6 modèles à 1 seul modèle de
+     secours raisonnable (qwen2.5-7b-instruct)
+
+Résultat :
+  Sur les tests effectués après correction, plus aucune occurrence
+  de "Channel Error" n'a été observée ; les générations se sont
+  terminées proprement (indicateur technique : "truncated = 0",
+  signifiant que la réponse n'a pas été coupée prématurément).
+
+------------------------------------------------------------------
+PARTIE 4 : COMPORTEMENT DE MISE EN MÉMOIRE DES MODÈLES (TTL)
+------------------------------------------------------------------
+
+Question posée : combien de temps un modèle reste-t-il chargé en
+mémoire avant de devoir être rechargé ?
+
+Réponse documentée (source officielle LM Studio) :
+  Par défaut, un modèle chargé en JIT (à la demande) reste en
+  mémoire pendant 60 MINUTES d'inactivité avant d'être déchargé
+  automatiquement. Ce délai (appelé "TTL" - Time To Live, ou
+  "durée de vie") se RÉINITIALISE à chaque nouvelle requête reçue
+  par le modèle.
+
+[PÉDAGOGIE] Concrètement, cela veut dire :
+  - Si vous envoyez au moins un message par heure, le modèle reste
+    en permanence chargé et prêt, sans jamais repayer le coût de
+    chargement initial (environ 10 à 15 secondes de délai
+    supplémentaire sur le tout premier message).
+  - Si vous laissez passer plus d'une heure sans aucune activité,
+    le prochain message déclenchera un nouveau chargement complet,
+    avec le délai initial associé.
+  - Cette valeur de 60 minutes est configurable dans LM Studio,
+    dans l'onglet Developer -> Server Settings, si un réglage
+    différent est souhaité à l'avenir.
+
+------------------------------------------------------------------
+PARTIE 5 : INVENTAIRE DES MODÈLES LOCAUX ET RECOMMANDATIONS D'USAGE
+------------------------------------------------------------------
+
+Un inventaire complet des modèles installés sur LM Studio a été
+réalisé (commande "lms ls --json"), révélant 18 modèles
+disponibles (16 modèles de langage + 2 modèles d'embedding).
+
+Ces modèles ont été classés en 5 catégories d'usage, en fonction
+de leur taille, de leur architecture et de leurs capacités
+(support de la vision, taille du contexte, spécialisation) :
+
+  1. VITESSE PURE (petits modèles, réponse la plus rapide)
+     -> llama-3.2-3b-instruct, gemma-4-e4b-it,
+        qwen3.5-4b-instruct-revised
+
+  2. CODING (modèles spécialisés développement/code)
+     -> qwen2.5-coder-7b-instruct-ghidra-v2, qwen2.5-7b-instruct,
+        senecallm_x_qwen2.5-7b-cybersecurity
+
+  3. TÂCHE NORMALE (équilibre vitesse/qualité, usage quotidien)
+     -> qwen3.5-4b-instruct-revised, qwen3.5-4b-kimi-reasoning-
+        luna-lora, meta-llama-3.1-8b-instruct
+
+  4. MULTI-MODAL RAPIDE (capable de lire des images, léger)
+     -> gemma-4-e4b-it, qwen3.5-4b-instruct-revised,
+        qwen3.5-4b-kimi-reasoning-luna-lora
+     [ANNOTATION] Le modèle qwen3-vl-8b-instruct-abliterated a été
+     volontairement exclu de cette catégorie malgré son support de
+     la vision, car il a été mesuré à seulement 1.58 tokens/seconde
+     dans les logs - nettement plus lent que les alternatives.
+
+  5. LENT MAIS PRÉCIS / TÂCHE LOURDE (gros modèles, contexte
+     étendu, cas d'usage spécialisés)
+     -> mythos (contexte jusqu'à 1 million de tokens),
+        qwen3.6-27b-redteam-v5 / blueteam-v5 (sécurité offensive/
+        défensive), qwen3-vl-8b-instruct-abliterated,
+        ibm/granite-3.2-8b, agents-a1-4b-kimi-preview-heretic
+        (non quantisé, donc plus lourd mais potentiellement plus
+        précis)
+
+[MISE EN GARDE DOCUMENTÉE] Certains modèles installés portent des
+noms comme "abliterated", "heretic", "redteam" ou "blueteam", qui
+indiquent des versions modifiées où certains garde-fous de
+sécurité standards ont été retirés ou altérés par leurs auteurs
+tiers. Leur comportement peut être moins prévisible que celui des
+versions officielles des modèles. Une vigilance particulière est
+recommandée lors de leur utilisation.
+
+------------------------------------------------------------------
+PARTIE 6 : CRÉATION DE 5 AGENTS OPENCLAW SPÉCIALISÉS
+------------------------------------------------------------------
+
+[PÉDAGOGIE] Qu'est-ce qu'un "agent" dans OpenClaw ?
+  Un agent est une configuration indépendante avec son propre nom
+  (id), son propre dossier de travail, son propre modèle IA par
+  défaut, et sa propre liste de modèles de secours. On peut le
+  voir comme un "profil" ou une "personnalité" différente
+  d'OpenClaw, chacune optimisée pour un type de tâche particulier.
+
+Action réalisée :
+  En complément de l'agent "local" déjà existant, cinq nouveaux
+  agents ont été créés dans openclaw.json, chacun avec son propre
+  dossier de travail sous D:\OpenClaw\workspace\agents\ :
+
+    - local-fast    : llama-3.2-3b-instruct (priorité vitesse)
+    - local-coding  : qwen2.5-coder-7b-instruct-ghidra-v2
+                      (priorité développement/code)
+    - local-normal  : qwen3.5-4b-instruct-revised (usage général)
+    - local-vision  : gemma-4-e4b-it (lecture d'images rapide)
+    - local-heavy   : mythos (tâches complexes, contexte étendu)
+
+[NOTE IMPORTANTE POUR L'UTILISATION FUTURE]
+  Ces 5 agents sont configurés et prêts, mais n'ont PAS encore été
+  testés individuellement lors de cette session (la fatigue de fin
+  de session n'a pas permis d'aller plus loin). Une prochaine
+  session de travail devra :
+    a) Déterminer comment sélectionner un agent spécifique selon
+       le canal utilisé (Telegram, WhatsApp, CLI OpenClaw...)
+    b) Tester chaque agent individuellement avec un message simple
+    c) Vérifier en particulier le fallback "lmstudio/ibm/
+       granite-3.2-8b" de l'agent local-heavy, dont le nom contient
+       un caractère "/" supplémentaire qui pourrait être mal
+       interprété par OpenClaw et nécessiter un ajustement
+
+------------------------------------------------------------------
+PARTIE 7 : DERNIER RÉGLAGE DE FIN DE SESSION
+------------------------------------------------------------------
+
+À la toute fin de la session, sur demande explicite (priorité à la
+vitesse avant de terminer), l'agent "local" original (celui utilisé
+au quotidien, sans besoin de préciser un id différent) a été
+reconfiguré pour utiliser directement le modèle le plus rapide de
+l'inventaire :
+
+  AVANT : agent "local" -> modèle principal qwen3.5-4b-instruct-
+          revised (fallback : qwen2.5-7b-instruct)
+
+  APRÈS : agent "local" -> modèle principal llama-3.2-3b-instruct
+          (fallback : qwen3.5-4b-instruct-revised)
+
+[ANNOTATION] Ce choix privilégie la RAPIDITÉ de réponse au
+détriment potentiel d'une légère baisse de qualité/nuance des
+réponses, le modèle 3B étant plus petit (donc moins "capable" en
+théorie) que le modèle 4B utilisé précédemment. C'est un compromis
+volontaire fait en fin de session ; il peut être révisé à tout
+moment en revenant à qwen3.5-4b-instruct-revised comme modèle
+principal si la qualité de réponse s'avère insuffisante à l'usage.
+
+------------------------------------------------------------------
+ANNEXE : FICHIERS MODIFIÉS ET SAUVEGARDES
+------------------------------------------------------------------
+
+Fichier principal modifié :
+  C:\Users\Tech\.openclaw\openclaw.json
+
+Fichier de configuration modèle LM Studio modifié :
+  C:\Users\Tech\.lmstudio\.internal\user-concrete-model-default-
+  config\Smoffyy\Qwen3.5-4B-Instruct-Revised-GGUF\
+  Qwen3.5-4B-Revised-q4_k_m.gguf.json
+
+[BONNE PRATIQUE APPLIQUÉE] Avant chaque modification du fichier
+openclaw.json, une copie de sauvegarde horodatée a été créée
+automatiquement (format : openclaw.json.bak-AAAAMMJJ-HHMMSS) dans
+le même dossier. En cas de problème après une modification, il est
+possible de restaurer une version antérieure en renommant le
+fichier de sauvegarde concerné pour qu'il redevienne
+"openclaw.json".
+
+------------------------------------------------------------------
+GLOSSAIRE RAPIDE
+------------------------------------------------------------------
+
+API / Clé API     : Interface permettant à deux logiciels de
+                     communiquer ; la clé API est un identifiant
+                     secret prouvant l'autorisation d'accès.
+
+Token             : Unité de texte utilisée par les modèles d'IA
+                     (environ 0,7-0,75 mot par token en moyenne).
+
+Tokens/seconde    : Mesure de vitesse de génération d'un modèle
+                     d'IA - plus le chiffre est élevé, plus la
+                     réponse apparaît rapidement.
+
+GPU / iGPU        : Circuit graphique. Un GPU dédié (carte
+                     graphique séparée) est nettement plus puissant
+                     qu'un iGPU (circuit graphique intégré au
+                     processeur) pour les calculs d'IA.
+
+Offload           : Action de déléguer une partie des calculs d'un
+                     composant (ex : CPU) vers un autre (ex : GPU).
+
+JIT (Just In Time): Chargement "à la demande" - un modèle n'est
+                     chargé en mémoire qu'au moment où on en a
+                     besoin, plutôt qu'en permanence.
+
+TTL (Time To Live) : Durée pendant laquelle un modèle reste chargé
+                     en mémoire sans activité avant d'être
+                     déchargé automatiquement.
+
+Fallback          : Modèle ou service de secours utilisé
+                     automatiquement si le choix principal échoue.
+
+Preload           : Préchargement forcé d'un modèle au démarrage,
+                     par opposition au chargement à la demande.
+
+Channel Error     : Erreur technique survenant en cours de
+                     génération, généralement liée à une
+                     interruption de connexion ou une surcharge
+                     de ressources.
+
+==================================================================
+Fin du document
+==================================================================

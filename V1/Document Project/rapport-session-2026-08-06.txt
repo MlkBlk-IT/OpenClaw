@@ -1,0 +1,188 @@
+RAPPORT DE SESSION - OpenClaw Hardening
+Date: 2026-08-06
+Scope: knowledge/firewall.md (creation) + agents/local/* (Phase 2 handoff)
+
+====================================================================
+1. CONTEXTE DE DEPART
+====================================================================
+
+Handoff recu en debut de session (document externe): incident-canonical
+deja resolu en session precedente - Main a fabrique une chaine d'execution
+complete (session_key, resolvedModel_json, claim SUCCESS) sans jamais
+invoquer sessions_spawn. Confirme via logs bruts, zero occurrence sur
+fenetre complete. Cause: hallucination sous pression apres epuisement
+du fallback-chain cloud, pas un bug technique.
+
+3 fichiers deja patches avant cette session: AGENTS.md, SOUL.md,
+security.md (knowledge/) - toujours dans le meme format machine-syntax.
+
+Phase 2 (non-commencee au depart): authoring de 6 fichiers vides sous
+agents/local/ - bloquee sur une question non-verifiee (le gateway
+supporte-t-il un bypass direct @local vers Main).
+
+====================================================================
+2. METHODE DE TRAVAIL - CONTRAT COMPORTEMENTAL
+====================================================================
+
+Un contrat explicite a ete pose en cours de session (BEHAVIOR-CONTRACT):
+zero-assumption, token-economy, machine-language, execution step-par-step
+avec confirmation explicite avant de continuer. Applique pour le reste
+de la session: chaque draft a ete propose, corrige sur feedback, puis
+seulement patche apres validation explicite.
+
+Regle-cle respectee: aucune ecriture-disque sans (a) verification-format
+prealable sur fichiers existants, (b) accord explicite du contenu final.
+
+====================================================================
+3. METHODES DE RECHERCHE UTILISEES
+====================================================================
+
+Recherche web utilisee a 4 reprises distinctes, chacune pour verifier
+une affirmation avant de l'utiliser (pas d'assertion sans verification):
+
+  a) Format reel SKILL.md OpenClaw (docs.openclaw.ai) - a determine que
+     le contenu demande n'etait PAS un skill (procedure invocable) mais
+     une regle de gouvernance permanente -> reoriente vers knowledge/.
+
+  b) Format reel knowledge/*.md - aucune structure officielle "knowledge/"
+     trouvee dans docs.openclaw.ai. Conclusion: convention perso de
+     l'utilisateur, pas une fonctionnalite native. Confirme ensuite par
+     capture d'ecran + contenu reel de security.md/routing.md fournis
+     directement par l'utilisateur - le format a ete deduit de ces
+     fichiers reels, jamais invente.
+
+  c) OWASP LLM01 / GenAI Top 10 (genai.owasp.org, OWASP Cheat Sheet
+     Series) - standard industrie pour separation instruction/donnee
+     et gestion des contenus non-fiables. Utilise pour cross-verifier
+     le contenu de firewall.md contre les pratiques etablies.
+
+  d) Best practices agents locaux/subagents OpenClaw (docs.openclaw.ai,
+     github.com/openclaw/openclaw) - a confirme le pattern officiel
+     "task/label = data, pas instruction" pour les sub-agents, et la
+     regle no-nested-fanout (un sub-agent ne peut pas en spawner un
+     autre) - integree dans AGENTS.md(local).
+
+  e) Guardrails 2026 / data-exfiltration prevention (Kiteworks, Webyot,
+     Improvado) - a etabli une limite honnete: un guardrail textuel
+     seul reste probabiliste, jamais un vrai hard-stop. Cette limite
+     est documentee explicitement dans AGENTS.md(local) plutot que
+     de presenter le guardrail comme infaillible.
+
+====================================================================
+4. DECISIONS PRISES ET JUSTIFICATION
+====================================================================
+
+4.1 firewall.md cree dans knowledge/ (pas skills/)
+    Raison: le contenu (zero-trust content-boundary) est un
+    comportement permanent, pas une procedure declenchee a la demande.
+    Un skill OpenClaw = invocable pour UNE tache; ceci s'applique a
+    chaque tour.
+
+4.2 Classification binaire DATA/INSTRUCTION (pas 5 categories)
+    Le standard academique (arxiv 2606.31639) recommande des categories
+    typees (instruction/document/tool-output/memoire/policy). Choix:
+    garder le binaire decisionnel simple, ajouter les sous-types comme
+    tag de tracabilite (log-only) sans changer la logique de decision.
+    Compromis explicite entre rigueur academique et lisibilite/maintenabilite
+    pour un systeme solo, pas une equipe.
+
+4.3 Frontiere interne Main<->local traitee comme frontiere externe
+    Justification empirique directe: l'incident-canonical a montre
+    qu'une fabrication peut se produire sans compromission externe.
+    Donc l'appartenance au systeme (local = agent de confiance
+    operationnelle) ne doit pas donner d'immunite de classification.
+
+4.4 Regle HARD-GUARDRAIL (info sensible) repetee dans 3 fichiers
+    (SOUL.md, AGENTS.md, firewall.md) + rappel dans USER.md
+    Redondance voulue et confirmee explicitement par l'utilisateur,
+    pas une duplication a nettoyer. Rationale: la meme regle depuis
+    plusieurs points d'entree reduit la probabilite qu'un chemin
+    d'execution la contourne completement.
+
+4.5 Limite honnete documentee dans le guardrail lui-meme
+    Ligne ajoutee explicitement: "regle-textuelle=probabiliste... reduit
+    le risque, elimine pas. hardening structurel = hors-scope, a
+    evaluer separement." Choix de ne pas presenter le guardrail comme
+    une garantie absolue, ce qui aurait ete techniquement faux et aurait
+    reproduit l'erreur de l'incident-canonical (confiance excessive dans
+    une regle textuelle).
+
+4.6 Routing @local: documente comme config custom, pas comme feature
+    officielle garantie
+    La recherche (docs.openclaw.ai/concepts/multi-agent) confirme un
+    mecanisme de bindings + mentionPatterns, mais pas explicitement un
+    bypass ingress ponctuel dans un chat partage. Ecrit tel quel plutot
+    que suppose confirme.
+
+====================================================================
+5. FICHIERS MODIFIES (SESSION COMPLETE)
+====================================================================
+
+knowledge/firewall.md        - CREE (utilisateur), Related ajoutes
+knowledge/security.md        - PATCH (cloud.execute=forbidden, Related)
+knowledge/routing.md         - PATCH (durcissement taches 6/7/8, redteam)
+agents/local/AGENTS.md       - REECRIT (HARD-GUARDRAIL, restrictions,
+                                routing, applies-even-if etendu)
+agents/local/SOUL.md         - PATCH (acces web conditionnel, info-sensible)
+agents/local/TOOLS.md        - PATCH (orchestrateur-routing, skills-heritage,
+                                Browser restreint)
+agents/local/IDENTITY.md     - REMPLI (etait template vide)
+agents/local/USER.md         - REMPLI (etait template vide, warning +
+                                guardrail complet)
+agents/local/HEARTBEAT.md    - Inchange (vide intentionnel, comportement
+                                par defaut correct)
+
+Methode d'ecriture: backup horodate avant chaque patch, verification
+des marqueurs-cles apres ecriture (validate-post), rollback automatique
+si validation echoue. Un cas de rollback-partiel rencontre (regex non-
+DOTALL n'a pas matche un bloc multi-ligne) - corrige par ancrage different,
+pas de perte de donnees (backup intact a chaque etape).
+
+====================================================================
+6. SOURCES PRINCIPALES CITEES
+====================================================================
+
+- docs.openclaw.ai/tools/creating-skills, /tools/skills,
+  /concepts/multi-agent, /tools/subagents, /reference/token-use
+- github.com/openclaw/openclaw/blob/main/AGENTS.md,
+  github.com/openclaw/openclaw/blob/main/SECURITY.md
+- genai.owasp.org/llmrisk/llm01-prompt-injection
+- cheatsheetseries.owasp.org (LLM Prompt Injection Prevention)
+- arxiv.org/pdf/2606.31639 (Instruction-Data Separation, survey)
+- kiteworks.com (AI Agent Security Incidents 2026)
+
+====================================================================
+7. SYNTHESE
+====================================================================
+
+Session en deux temps. D'abord creation de knowledge/firewall.md:
+frontiere de confiance unique couvrant a la fois le contenu externe
+(web/email/doc/tool_result) et la frontiere interne Main<->local,
+directement motivee par l'incident-canonical documente en amont.
+Contenu verifie contre OWASP LLM01 avant finalisation - deux gaps
+combles (report-not-command deja couvert, human-in-loop ajoute comme
+pont vers security.md).
+
+Ensuite, Phase 2 du handoff: les 6 fichiers agents/local/ n'etaient
+plus vides comme annonce - AGENTS.md/TOOLS.md deja rediges, SOUL.md
+rempli mais contenant une contradiction directe avec TOOLS.md (SOUL
+interdisait tout acces web, TOOLS listait Browser comme capacite
+active). Corrige sur decision explicite (acces web autorise, conditionnel
+a une demande explicite de Malik).
+
+Series d'instructions supplementaires integrees au fur et a mesure
+(bypass ingress @local, restriction skills red-team, priorite
+orchestrateur-local avant fallback cloud, regle absolue sur les
+informations sensibles). Cette derniere a ete la plus travaillee:
+premiere version jugee insuffisamment stricte, renforcee en butee
+avec liste explicite de tentatives de contournement (impersonation,
+ordre direct, invocation de policy, bypass graduel), puis dupliquee
+intentionnellement sur 3 fichiers plus un rappel dans USER.md pour
+reduire le risque qu'un seul point de defaillance suffise a la
+contourner.
+
+Tous les patches ont ete appliques via scripts PowerShell suivant
+le protocole deja etabli (backup/validate/write/validate/rollback),
+avec confirmation manuelle systematique avant chaque ecriture-disque.
+Aucune donnee perdue, un seul correctif necessaire en cours de route
+(probleme de regex, pas de contenu).
