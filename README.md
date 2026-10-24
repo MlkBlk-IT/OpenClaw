@@ -1,3 +1,5 @@
+> ⚠️ **Note:** The rest of this repository (code, comments, scripts, docs, commits, issues) is written in **French**. Only this README is in English.
+
 <div align="center">
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=OpenClaw&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Hybrid%20local%20%2B%20cloud%20agentic%20AI%20architecture%20%E2%80%94%20V1%20to%20V2%2C%20machine%20contracts&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="OpenClaw" />
