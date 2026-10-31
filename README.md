@@ -4,29 +4,37 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/OpenClaw/main/docs/mlkblk-banner.svg" width="100%" alt="OpenClaw — Malik Belkacemi · MLKBLK-IT" /></p>
 
-<img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
+<img src="https://img.shields.io/badge/LAB-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
 
 </div>
 
-> From V1 (technical debt) to V2 (clean slate, machine contracts)
-> Hybrid local (LM Studio) + cloud AI orchestration project
+> **This repository is a LAB.** It documents an architecture methodology and
+> what a full reset costs. It is **not** a server, **not** an MCP server and
+> **not** a product you install. There is nothing to run here.
 
-## Lessons learned
+## What it is
 
-This project documents two complete iterations of an AI architecture:
+A **research lab** on hybrid local (LM Studio) + cloud AI architectures. The
+subject is the architecture itself: how it is specified, how it is hardened, and
+what happens when it is built without contracts.
 
-### V1 — The accumulation
-- 7-layer hybrid architecture (local LM Studio + cloud API)
-- 14 troubleshooting reports, baseline configuration, tuning
-- **Cause of death**: patch on patch, 15 stacked fallbacks, no reset
-- The "works on my machine" sequence piled up into an unmaintainable system
+Two complete iterations are documented:
 
-### V2 — The reset
-- **Clean Slate**: V1 abandoned, clean restart
-- Machine contracts before code (`Architecture_Contract.docx`, `Orchestration_Contract.docx`)
-- Strict MAIN (system) / LOCAL (LM Studio) separation
-- 10-phase runbook, structural hardening
-- Session journal, professional action plan
+- **V1 — the accumulation**: a 7-layer hybrid stack, 14 troubleshooting reports,
+  15 stacked fallbacks, and a "works on my machine" sequence that became
+  unmaintainable.
+- **V2 — the reset**: clean slate, machine contracts written before code, strict
+  MAIN (system) / LOCAL (LM Studio) separation, a 10-phase runbook and a
+  hardening pass.
+
+## Quickstart
+
+There is nothing to install. Read it in this order:
+
+1. [`Rapport_Consolide_OpenClaw.md`](Rapport_Consolide_OpenClaw.md) — the consolidated report (French).
+2. [`V2/OpenClaw_AI_Machine_Language_Architecture_Contract.md`](V2/OpenClaw_AI_Machine_Language_Architecture_Contract.md) — the machine contract written before any code.
+3. [`V2/OpenClaw_Hardening_Structurel.md`](V2/OpenClaw_Hardening_Structurel.md) — the structural hardening.
+4. [`V2/OpenClaw_Reset_V2_Professional_Action_Plan.md`](V2/OpenClaw_Reset_V2_Professional_Action_Plan.md) — the runbook.
 
 ## Structure
 
@@ -34,18 +42,28 @@ This project documents two complete iterations of an AI architecture:
 ├── V1/
 │   └── Document Project/     # 14 reports (architecture, deployment, diagnostics)
 ├── V2/
-│   ├── Architecture_Contract.docx → .md
-│   ├── Reset_V2_Action_Plan.md
-│   ├── Hardening_Structurel.md
-│   └── Session1_Journal.md
+│   ├── OpenClaw_AI_Machine_Language_Architecture_Contract.md
+│   ├── OpenClaw_Reset_V2_Professional_Action_Plan.md
+│   ├── OpenClaw_Hardening_Structurel.md
+│   └── OpenClaw_V2_Session1_Journal_et_Plan.md
 └── Rapport_Consolide_OpenClaw.md
 ```
 
-## What this project demonstrates
+## What this lab demonstrates
 
 1. **Technical-debt awareness** — identifying and recording the failure rather than patching forever
 2. **Methodology** — contracts before code, separation of concerns
 3. **Rigorous documentation** — every decision traced, every failure analyzed
+
+## Status
+
+| Item | State |
+|---|---|
+| Nature | **LAB / research documentation** — no runnable product, no server |
+| V1 | Closed — the technical debt is documented and kept as reference |
+| V2 | Contract + hardening + runbook written; the implementation is a separate, later effort |
+| MCP | **Not applicable** — this repository contains no MCP server |
+| Language | French for the content, English for this README |
 
 ## Author
 
