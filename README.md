@@ -52,6 +52,11 @@ This project documents two complete iterations of an AI architecture:
 Malik — IT Support student (DEP), self-taught
 Project: August 2026
 
+
+## Ownership and license
+
+[Project origin and evidence](PROJECT-ORIGIN.md) · [License](LICENSE)
+
 ---
 
 <div align="center">
