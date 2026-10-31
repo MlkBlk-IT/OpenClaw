@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/OpenClaw/main/docs/mlkblk-banner.svg" width="100%" alt="OpenClaw — Malik Belkacemi · MLKBLK-IT" /></p>
+<p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/MlkBlk-IT/main/assets/mlkblk-banner-v2.svg" width="100%" alt="OpenClaw — Malik Belkacemi · MLKBLK-IT" /></p>
 
 <img src="https://img.shields.io/badge/LAB-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
 
