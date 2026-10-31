@@ -1,34 +1,63 @@
-# OpenClaw
+> ⚠️ **Note:** The rest of this repository (code, comments, scripts, docs, commits, issues) is written in **French**. Only this README is in English.
 
-A documented hybrid AI architecture experiment that compares a local LM Studio workflow with cloud AI services.
+<div align="center">
 
-## Why this repository exists
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=OpenClaw&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Hybrid%20local%20%2B%20cloud%20agentic%20AI%20architecture%20%E2%80%94%20V1%20to%20V2%2C%20machine%20contracts&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="OpenClaw" />
 
-OpenClaw records two iterations of the same idea:
+<img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
 
-- **V1** — a layered system that accumulated patches and fallbacks until it became difficult to maintain.
-- **V2** — a clean restart based on machine-readable contracts, a strict separation between the main system and local inference, and a step-by-step runbook.
+</div>
 
-The main lesson is practical: define the system boundaries before adding more fixes.
+> From V1 (technical debt) to V2 (clean slate, machine contracts)
+> Hybrid local (LM Studio) + cloud AI orchestration project
 
-## Repository map
+## Lessons learned
+
+This project documents two complete iterations of an AI architecture:
+
+### V1 — The accumulation
+- 7-layer hybrid architecture (local LM Studio + cloud API)
+- 14 troubleshooting reports, baseline configuration, tuning
+- **Cause of death**: patch on patch, 15 stacked fallbacks, no reset
+- The "works on my machine" sequence piled up into an unmaintainable system
+
+### V2 — The reset
+- **Clean Slate**: V1 abandoned, clean restart
+- Machine contracts before code (`Architecture_Contract.docx`, `Orchestration_Contract.docx`)
+- Strict MAIN (system) / LOCAL (LM Studio) separation
+- 10-phase runbook, structural hardening
+- Session journal, professional action plan
+
+## Structure
 
 ```
-V1/   Historical reports, architecture notes and diagnostics
-V2/   Contracts, reset plan, hardening notes and runbook
+├── V1/
+│   └── Document Project/     # 14 reports (architecture, deployment, diagnostics)
+├── V2/
+│   ├── Architecture_Contract.docx → .md
+│   ├── Reset_V2_Action_Plan.md
+│   ├── Hardening_Structurel.md
+│   └── Session1_Journal.md
+└── Rapport_Consolide_OpenClaw.md
 ```
 
-## What it demonstrates
+## What this project demonstrates
 
-- How technical debt grows in an AI integration project
-- Why local and cloud responsibilities should be explicit
-- How contracts and journals make troubleshooting repeatable
-- How to reset an unstable design without losing the lessons learned
-
-## Status
-
-This is primarily a documentation and methodology project. Read the V2 contract and action plan first.
+1. **Technical-debt awareness** — identifying and recording the failure rather than patching forever
+2. **Methodology** — contracts before code, separation of concerns
+3. **Rigorous documentation** — every decision traced, every failure analyzed
 
 ## Author
 
-Built by [Malik Belkacemi](https://github.com/MlkBlk-IT).
+Malik — IT Support student (DEP), self-taught
+Project: August 2026
+
+---
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ff9c,50:03150c,100:e10600&height=100&section=footer" width="100%" alt="" />
+
+**⚡ Built on CPU. Proven on disk. ⚡**
+
+</div>
