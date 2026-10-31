@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:e10600,50:1a0505,100:00ff9c&height=140&section=header&text=OpenClaw&fontSize=42&fontColor=e10600&fontAlignY=32&desc=Hybrid%20local%20%2B%20cloud%20agentic%20AI%20architecture%20%E2%80%94%20V1%20to%20V2%2C%20machine%20contracts&descAlignY=53&descSize=15&descColor=00ff9c" width="100%" alt="OpenClaw" />
+<p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/OpenClaw/main/docs/readme-header.svg" width="100%" alt="OpenClaw visual header" /></p>
 
 <img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
 
