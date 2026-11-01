@@ -4,7 +4,7 @@
 
 <p align="center"><img src="https://raw.githubusercontent.com/MlkBlk-IT/OpenClaw/main/docs/mlkblk-banner-v2.svg" width="100%" alt="OpenClaw — Malik Belkacemi · MLKBLK-IT" /></p>
 
-<img src="https://img.shields.io/badge/LAB-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/LM%20Studio-e10600?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Agentic%20AI-00ff9c?style=for-the-badge&labelColor=0d0d0d" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-e10600?style=for-the-badge&labelColor=0d0d0d" />
+<img src="https://img.shields.io/badge/LAB-ff5fa2?style=for-the-badge&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/LM%20Studio-ff5fa2?style=for-the-badge&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/Agentic%20AI-2de2ff?style=for-the-badge&labelColor=0d0a2b" /> <img src="https://img.shields.io/badge/Methodology%20%2B%20Docs-ff5fa2?style=for-the-badge&labelColor=0d0a2b" />
 
 </div>
 
@@ -79,7 +79,7 @@ Project: August 2026
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00ff9c,50:03150c,100:e10600&height=100&section=footer" width="100%" alt="" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:2de2ff,50:0d0a2b,100:ff5fa2&height=100&section=footer" width="100%" alt="" />
 
 **⚡ Built on CPU. Proven on disk. ⚡**
 
