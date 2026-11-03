@@ -11,6 +11,13 @@
 > **This repository is a LAB.** It documents an architecture methodology and
 > what a full reset costs. It is **not** a server, **not** an MCP server and
 > **not** a product you install. There is nothing to run here.
+## At a glance
+
+| | |
+|---|---|
+| **What it is** | A **lab** — an architecture methodology, and what a full reset costs. |
+| **What it is not** | Not a server, not an MCP server, not a product you install. **There is nothing to run here.** |
+| **Focus** | LM Studio · local models · agentic AI · methodology + docs |
 
 ## What it is
 
